@@ -1,46 +1,47 @@
-from dotenv import find_dotenv, load_dotenv
-from models import img2text, generate_story, text_to_speech
-from constants import IMAGE_URL
-
 import streamlit as st
+import tempfile
+from models import img2text, generate_story, text_to_speech
+from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
-
-def tell_story(image_path, no_of_words=20):
-    print(f"no_of_words: {no_of_words}")
+def tell_story(image_path, word_limit):
     scenario = img2text(image_path)
-    story = generate_story(scenario, n=no_of_words)
-    text_to_speech(story)
-
-    return scenario, story
-
+    story = generate_story(scenario, n=word_limit)
+    audio_path = text_to_speech(story)
+    return scenario, story, audio_path
 
 def main():
-    st.title("AI Story Teller")
-    st.header("AI Story Teller")
+    st.set_page_config(page_title="AI Image to Story", layout="centered")
+    st.title("🖼️📖 Image to Story Teller")
+    st.write("Upload an image, and the AI will generate a short story and read it out loud!")
 
-    uploded_file = st.file_uploader("Choose an image...", type="jpg")
-    if uploded_file is not None:
-        st.image(uploded_file, caption="Uploaded Image.", use_column_width=True, width="25%")
-        byte_data = uploded_file.getvalue()
-        with open(uploded_file.name, "wb") as f:
-            f.write(byte_data)
+    uploaded_file = st.file_uploader("Upload a JPG image", type=["jpg", "jpeg", "png"])
+    
+    if uploaded_file:
+        st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
+        word_limit = st.selectbox("Story Word Limit", [10, 20, 30, 40, 50])
 
-        st.write("Generating a Story based on the Image...")
-        number = st.selectbox("Select the number of words", [10, 20, 30, 40, 50])
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_image:
+            temp_image.write(uploaded_file.getvalue())
+            temp_image_path = temp_image.name
 
-        scenario, story = tell_story(uploded_file.name, no_of_words=number)
+        with st.spinner("Generating story and audio..."):
+            try:
+                scenario, story, audio_path = tell_story(temp_image_path, word_limit)
+            except Exception as e:
+                st.error(f"Something went wrong: {e}")
+                return
 
-        with st.expander("Scenario"):
+        st.success("Done!")
+
+        with st.expander("📷 Scenario Detected"):
             st.write(scenario)
-        with st.expander("Story"):
+
+        with st.expander("📚 Generated Story"):
             st.write(story)
-        text_to_speech(story)
 
-        st.audio("audio.wav")
-        
-
+        st.audio(audio_path)
 
 if __name__ == "__main__":
     main()
