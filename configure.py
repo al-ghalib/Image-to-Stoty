@@ -3,7 +3,6 @@ import requests
 import streamlit as st
 from dotenv import load_dotenv, find_dotenv
 
-# Load environment variables from local .env if available
 load_dotenv(find_dotenv())
 
 API_TOKEN = os.getenv("HUGGINGFACEHUB_API_TOKEN", st.secrets.get("HUGGINGFACEHUB_API_TOKEN"))
