@@ -4,3 +4,8 @@
 .jpg
 .jpeg
 .pyc
+*.pyo
+*.pyd
+.streamlit/secrets.toml
+__pycache__/
+*.DS_Store
